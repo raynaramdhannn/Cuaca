@@ -81,12 +81,25 @@ html {
   padding: 40px;
   width: 90%;
   max-width: 450px;
+  max-height: 95vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   box-shadow:
     0 8px 32px 0 rgba(0, 0, 0, 0.3),
     0 0 20px rgba(0, 0, 0, 0.1) inset;
   transition: box-shadow 0.5s ease;
   position: relative;
-  overflow: hidden;
+}
+
+.glass-card::-webkit-scrollbar {
+  width: 6px;
+}
+.glass-card::-webkit-scrollbar-track {
+  background: transparent;
+}
+.glass-card::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
 }
 
 .glass-card:hover {
@@ -95,7 +108,6 @@ html {
     0 0 30px var(--neon-accent) inset;
 }
 
-/* Search Box with Floating Label */
 .search-box {
   position: relative;
   width: 100%;
@@ -277,5 +289,73 @@ html {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .glass-card {
+    padding: 25px;
+    border-radius: 20px;
+  }
+
+  .search-box input {
+    font-size: 1rem;
+  }
+
+  #city-name {
+    font-size: 1.8rem;
+  }
+
+  .weather-icon {
+    font-size: 4.5rem;
+    margin: 15px 0;
+  }
+
+  .temp {
+    font-size: 3.2rem;
+  }
+
+  .desc {
+    font-size: 1rem;
+    margin-bottom: 20px;
+  }
+
+  .detail-item i {
+    font-size: 1.5rem;
+  }
+
+  .detail-info span {
+    font-size: 1.1rem;
+  }
+
+  .detail-info p {
+    font-size: 0.75rem;
+  }
+}
+
+@media screen and (max-height: 600px) {
+  .glass-card {
+    padding: 20px;
+  }
+
+  .search-box {
+    margin-bottom: 15px;
+  }
+
+  .weather-icon {
+    font-size: 3rem;
+    margin: 5px 0;
+  }
+
+  .temp {
+    font-size: 2.5rem;
+  }
+
+  #city-name {
+    margin-bottom: 5px;
+  }
+
+  .desc {
+    margin-bottom: 15px;
   }
 }

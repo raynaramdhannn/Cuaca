@@ -1,6 +1,4 @@
-// PENTING: Ganti dengan API Key OpenWeatherMap milik Anda
-// Daftar di https://openweathermap.org/api untuk mendapatkan kunci gratis
-const API_KEY = "542c7579b660f1bda9f189eae8762e73"; // Menggunakan key public untuk demo, ganti di production
+const API_KEY = "542c7579b660f1bda9f189eae8762e73"; // Gunakan key Anda di production
 
 // DOM Elements
 const appContainer = document.getElementById("app-container");
@@ -9,6 +7,7 @@ const searchBtn = document.getElementById("search-btn");
 const weatherInfo = document.getElementById("weather-info");
 const errorMsg = document.getElementById("error-msg");
 const loader = document.getElementById("loader");
+const forecastContainer = document.getElementById("forecast-container");
 
 // Weather Data Elements
 const cityNameEl = document.getElementById("city-name");
@@ -17,6 +16,9 @@ const weatherDescEl = document.getElementById("weather-desc");
 const humidityEl = document.getElementById("humidity");
 const windSpeedEl = document.getElementById("wind-speed");
 const wIconEl = document.getElementById("w-icon");
+
+// Hari dalam seminggu untuk terjemahan
+const daysIndo = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 
 // Initialize App
 document.addEventListener("DOMContentLoaded", () => {
@@ -48,7 +50,6 @@ function getUserLocation() {
       },
       (error) => {
         console.warn("Geolocation ditolak atau gagal:", error);
-        // Fallback jika lokasi tidak diizinkan
         fetchWeather("Jakarta");
       },
     );
@@ -57,72 +58,147 @@ function getUserLocation() {
   }
 }
 
-// Fetch API via City Name
+// Fetch API Current Weather & Forecast via City Name
 async function fetchWeather(city) {
   showLoading();
   errorMsg.classList.remove("show");
   try {
-    const response = await fetch(
+    // Fetch current weather
+    const resWeather = await fetch(
       `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric&lang=id`,
     );
-    const data = await response.json();
+    const dataWeather = await resWeather.json();
 
-    if (data.cod === "404" || data.cod === 404) {
+    if (dataWeather.cod === "404" || dataWeather.cod === 404) {
       throw new Error("Kota tidak ditemukan");
     }
 
-    updateUI(data);
+    // Fetch forecast using coordinates from current weather
+    const { lat, lon } = dataWeather.coord;
+    const resForecast = await fetch(
+      `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=id`,
+    );
+    const dataForecast = await resForecast.json();
+
+    updateUI(dataWeather, dataForecast);
   } catch (error) {
     showError();
   }
 }
 
-// Fetch API via Coordinates
+// Fetch API Current Weather & Forecast via Coordinates
 async function fetchWeatherByCoords(lat, lon) {
   try {
-    const response = await fetch(
+    const resWeather = await fetch(
       `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=id`,
     );
-    const data = await response.json();
-    updateUI(data);
+    const dataWeather = await resWeather.json();
+
+    const resForecast = await fetch(
+      `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=id`,
+    );
+    const dataForecast = await resForecast.json();
+
+    updateUI(dataWeather, dataForecast);
   } catch (error) {
     showError();
   }
+}
+
+// Helper untuk mendapatkan ikon fontawesome berdasarkan kondisi
+function getIconClass(mainCondition) {
+  const condition = mainCondition.toLowerCase();
+  if (condition === "clear") return "fa-sun";
+  if (condition === "clouds") return "fa-cloud";
+  if (condition === "rain" || condition === "drizzle") return "fa-cloud-rain";
+  if (condition === "thunderstorm") return "fa-poo-storm";
+  if (condition === "snow") return "fa-snowflake";
+  return "fa-smog";
 }
 
 // Update UI with Transitions
-function updateUI(data) {
+function updateUI(currentData, forecastData) {
   // Fade out current info
   weatherInfo.classList.add("hidden");
   loader.style.display = "none";
 
   setTimeout(() => {
-    // Parse Data
-    const { name } = data;
-    const { temp, humidity } = data.main;
-    const { speed } = data.wind;
-    const { description, main: weatherMain, id: weatherId } = data.weather[0];
+    // 1. Update Cuaca Saat Ini
+    const { name } = currentData;
+    const { temp, humidity } = currentData.main;
+    const { speed } = currentData.wind;
+    const {
+      description,
+      main: weatherMain,
+      id: weatherId,
+    } = currentData.weather[0];
 
-    // Update DOM
     cityNameEl.textContent = name;
     tempValEl.textContent = Math.round(temp);
     weatherDescEl.textContent = description;
     humidityEl.textContent = `${humidity}%`;
-    // Convert m/s to km/h
     windSpeedEl.textContent = `${Math.round(speed * 3.6)} km/j`;
 
-    // Update Icon & Theme based on weather condition
     setWeatherThemeAndIcon(weatherMain, weatherId);
+
+    // 2. Update Cuaca 5 Hari ke Depan
+    updateForecastUI(forecastData.list);
 
     // Fade in new info
     weatherInfo.classList.remove("hidden");
     cityInput.value = "";
-  }, 400); // Wait for fade-out animation
+  }, 400);
+}
+
+// Update Forecast DOM
+function updateForecastUI(list) {
+  forecastContainer.innerHTML = "";
+  const dailyData = [];
+  const processedDays = new Set();
+
+  // Dapatkan tanggal "hari ini" berdasarkan data pertama API untuk di-skip
+  const apiToday = list[0].dt_txt.split(" ")[0];
+
+  for (const item of list) {
+    const dateStr = item.dt_txt.split(" ")[0];
+
+    // Skip data hari ini, kita hanya butuh 5 hari selanjutnya
+    if (dateStr === apiToday) continue;
+
+    if (!processedDays.has(dateStr)) {
+      processedDays.add(dateStr);
+      // Idealnya ambil data jam 12 siang. Jika API merekam data setelah jam 12, kita pakai data item pertama yang tersedia hari itu.
+      const middayData =
+        list.find((d) => d.dt_txt.includes(`${dateStr} 12:00:00`)) || item;
+      dailyData.push(middayData);
+
+      if (dailyData.length === 5) break;
+    }
+  }
+
+  // Generate HTML untuk setiap hari
+  const forecastHTML = dailyData
+    .map((data) => {
+      const dateObj = new Date(data.dt * 1000);
+      const dayName = daysIndo[dateObj.getDay()];
+      const icon = getIconClass(data.weather[0].main);
+      const tempRound = Math.round(data.main.temp);
+
+      return `
+                    <div class="forecast-item">
+                        <p>${dayName}</p>
+                        <i class="fas ${icon}"></i>
+                        <p class="f-temp">${tempRound}°</p>
+                    </div>
+                `;
+    })
+    .join("");
+
+  forecastContainer.innerHTML = forecastHTML;
 }
 
 // Dynamic Theme and Icons Mapping
 function setWeatherThemeAndIcon(mainCondition, conditionId) {
-  // Reset classes
   appContainer.className = "";
   wIconEl.className = "fas";
 
@@ -139,12 +215,11 @@ function setWeatherThemeAndIcon(mainCondition, conditionId) {
     wIconEl.classList.add("fa-cloud-rain");
   } else if (condition === "thunderstorm") {
     appContainer.classList.add("theme-thunderstorm");
-    wIconEl.classList.add("fa-poo-storm"); // Using alternative for lightning
+    wIconEl.classList.add("fa-poo-storm");
   } else if (condition === "snow") {
     appContainer.classList.add("theme-snow");
     wIconEl.classList.add("fa-snowflake");
   } else {
-    // Default for atmosphere (mist, haze, smoke, etc)
     appContainer.classList.add("theme-default");
     wIconEl.classList.add("fa-smog");
   }

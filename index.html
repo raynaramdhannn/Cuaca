@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather</title>
+    <!-- Google Fonts: Poppins untuk tampilan modern -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- FontAwesome untuk Icon -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <!-- CSS Styles -->
+    <link rel="stylesheet" href="style.css" />
+    <!-- JavaScript -->
+    <script defer src="script.js"></script>
+  </head>
+  <body>
+    <!-- Main Container -->
+    <div id="app-container" class="theme-default">
+      <div class="glass-card">
+        <!-- Search Area -->
+        <div class="search-box">
+          <!-- Using placeholder=" " is a trick for the CSS :placeholder-shown to work for floating labels -->
+          <input
+            type="text"
+            id="city-input"
+            placeholder=" "
+            autocomplete="off"
+          />
+          <label for="city-input">Cari Kota atau Lokasi...</label>
+          <button id="search-btn"><i class="fas fa-search"></i></button>
+        </div>
+
+        <div id="error-msg" class="error-msg">Kota tidak ditemukan!</div>
+        <div id="loader" class="loader"></div>
+
+        <!-- Weather Information -->
+        <div id="weather-info" class="weather-info hidden">
+          <h1 id="city-name">--</h1>
+          <div class="weather-icon">
+            <i id="w-icon" class="fas fa-cloud"></i>
+          </div>
+          <div class="temp"><span id="temp-val">--</span>°C</div>
+          <div id="weather-desc" class="desc">--</div>
+
+          <div class="details">
+            <div class="detail-item">
+              <i class="fas fa-tint"></i>
+              <div class="detail-info">
+                <span id="humidity">--%</span>
+                <p>Kelembapan</p>
+              </div>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-wind"></i>
+              <div class="detail-info">
+                <span id="wind-speed">-- km/j</span>
+                <p>Kecepatan Angin</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
